@@ -31,7 +31,6 @@ class IMUTARSBSeriesNode: public rclcpp::Node
             this->declare_parameter<std::string>("frame_id", "");
             this->declare_parameter<uint8_t>("id", 226); // 0xE2 (Default ID)
 
-
             auto interface_name = this->get_parameter("interface_name").get_parameter_value().get<std::string>();
             prefix_ = this->get_parameter("prefix").get_parameter_value().get<std::string>();
             frame_id_ = this->get_parameter("frame_id").get_parameter_value().get<std::string>();
@@ -119,6 +118,8 @@ class IMUTARSBSeriesNode: public rclcpp::Node
 
                 if((recv_frame.can_id & 0xFF) == imu_id_)
                 {
+                    RCLCPP_INFO(this->get_logger(), "%X", (recv_frame.can_id >> 8) & 0xFF);
+
                     if(((recv_frame.can_id >> 8) & 0xFF) == 0x29) // PGN 61481 (0xF029) PITCH AND ROLL BROADCAST DATA
                     {
                         uint32_t pitch_raw = (recv_frame.data[2] << 16) + (recv_frame.data[1] << 8) + recv_frame.data[0];
@@ -144,7 +145,7 @@ class IMUTARSBSeriesNode: public rclcpp::Node
                         gyro_z = angles::from_degrees(yaw_deg);
 
                     }
-                    else if(((recv_frame.can_id >> 8) & 0xFF) == 0x2A) // PGN 61485 (0xF02D) ACCELERATION BROADCAST DATA
+                    else if(((recv_frame.can_id >> 8) & 0xFF) == 0x2D) // PGN 61485 (0xF02D) ACCELERATION BROADCAST DATA
                     {
                         uint16_t lateral = (recv_frame.data[1] << 8) + recv_frame.data[0];
                         linear_y = (lateral - 32000) / 100.0;
@@ -188,7 +189,6 @@ class IMUTARSBSeriesNode: public rclcpp::Node
                 }
             }
         }
-
 
     private:
         // std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Imu>> pub_imu_;
