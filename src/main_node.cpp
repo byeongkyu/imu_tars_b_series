@@ -28,7 +28,7 @@ class IMUTARSBSeriesNode: public rclcpp::Node
         {
             this->declare_parameter<std::string>("interface_name", "can0");
             this->declare_parameter<std::string>("prefix", "");
-            this->declare_parameter<std::string>("frame_id", "");
+            this->declare_parameter<std::string>("frame_id", "imu_link");
             this->declare_parameter<uint8_t>("id", 226); // 0xE2 (Default ID)
 
             auto interface_name = this->get_parameter("interface_name").get_parameter_value().get<std::string>();
@@ -118,7 +118,7 @@ class IMUTARSBSeriesNode: public rclcpp::Node
 
                 if((recv_frame.can_id & 0xFF) == imu_id_)
                 {
-                    RCLCPP_INFO(this->get_logger(), "%X", (recv_frame.can_id >> 8) & 0xFF);
+                    RCLCPP_DEBUG(this->get_logger(), "%X", (recv_frame.can_id >> 8) & 0xFF);
 
                     if(((recv_frame.can_id >> 8) & 0xFF) == 0x29) // PGN 61481 (0xF029) PITCH AND ROLL BROADCAST DATA
                     {
@@ -159,7 +159,7 @@ class IMUTARSBSeriesNode: public rclcpp::Node
                         // Publish IMU Topic
                         rt_pub_imu_->trylock();
 
-                        rt_pub_imu_->msg_.header.frame_id = frame_id_;
+                        rt_pub_imu_->msg_.header.frame_id = prefix_ + "/" + frame_id_;
                         rt_pub_imu_->msg_.header.stamp = this->now();
 
                         tf2::Quaternion q;
@@ -193,7 +193,6 @@ class IMUTARSBSeriesNode: public rclcpp::Node
     private:
         // std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Imu>> pub_imu_;
         std::shared_ptr<RealtimePublisher<sensor_msgs::msg::Imu>> rt_pub_imu_;
-
         std::shared_ptr<std::thread> thread_recv_data_;
 
         int can_sock_;
